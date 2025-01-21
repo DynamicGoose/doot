@@ -1,9 +1,14 @@
 let
   pkgs = import <nixpkgs> {};
-in pkgs.mkShell {
+  libPath = with pkgs; lib.makeLibraryPath [
+    libGL
+  ];
+in
+with pkgs; mkShell {
   buildInputs = [
-    pkgs.python3
-    pkgs.python3.pkgs.pip
+    python3
+    python3.pkgs.pip
+    libGL
   ];
   shellHook = ''
     # Tells pip to put packages into $PIP_PREFIX instead of the usual locations.
@@ -13,4 +18,5 @@ in pkgs.mkShell {
     export PATH="$PIP_PREFIX/bin:$PATH"
     unset SOURCE_DATE_EPOCH
   '';
+  LD_LIBRARY_PATH = "${libPath}";
 }
