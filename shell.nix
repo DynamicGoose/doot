@@ -17,6 +17,7 @@ with pkgs; mkShell {
     export PYTHONPATH="$PIP_PREFIX/${pkgs.python3.sitePackages}:$PYTHONPATH"
     export PATH="$PIP_PREFIX/bin:$PATH"
     unset SOURCE_DATE_EPOCH
+    pip install -r requirements.txt
   '';
   LD_LIBRARY_PATH = "${libPath}";
 }
