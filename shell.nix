@@ -2,6 +2,8 @@ let
   pkgs = import <nixpkgs> {};
   libPath = with pkgs; lib.makeLibraryPath [
     libGL
+    libz
+    xorg.libX11
   ];
 in
 with pkgs; mkShell {
@@ -9,6 +11,8 @@ with pkgs; mkShell {
     python3
     python3.pkgs.pip
     libGL
+    libz
+    xorg.libX11
   ];
   shellHook = ''
     # Tells pip to put packages into $PIP_PREFIX instead of the usual locations.
