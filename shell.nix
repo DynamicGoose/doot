@@ -4,6 +4,7 @@ let
     libGL
     libz
     xorg.libX11
+    libxkbcommon
   ];
 in
 with pkgs; mkShell {
@@ -23,5 +24,5 @@ with pkgs; mkShell {
     unset SOURCE_DATE_EPOCH
     pip install -r requirements.txt
   '';
-  LD_LIBRARY_PATH = "${libPath}";
+  LD_LIBRARY_PATH = "${pkgs.wayland}/lib:${libPath}";
 }
