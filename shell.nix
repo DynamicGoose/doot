@@ -5,6 +5,7 @@ let
     libz
     xorg.libX11
     libxkbcommon
+    stdenv.cc.cc.lib
   ];
 in
 with pkgs; mkShell {
