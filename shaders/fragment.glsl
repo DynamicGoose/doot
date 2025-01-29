@@ -1,8 +1,7 @@
-#version 330
-in vec3 v_color;
+#version 330 core
 
-out vec3 f_color;
+layout (location = 0) out vec4 out_color;
 
 void main() {
-    f_color = v_color;
+    out_color = vec4(1.0, 1.0, 1.0, 1.0);
 }
