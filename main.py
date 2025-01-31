@@ -1,6 +1,11 @@
+from moderngl_window.resources import programs
+from moderngl_window.scene import scene
+from moderngl_window.scene.programs import MeshProgram
 from renderer.window import CameraWindow
 import glm
 import moderngl_window as glw
+from moderngl_window.meta import ProgramDescription
+from moderngl_window import resources
 import moderngl
 
 class DootWindow(CameraWindow):
@@ -12,19 +17,25 @@ class DootWindow(CameraWindow):
         super().__init__(**kwargs)
 
         self.scene = self.load_scene("Sponza/Sponza.gltf")
-        
+        self.program = programs.load(
+            ProgramDescription(
+                vertex_shader="shaders/shader.glsl",
+                fragment_shader="shaders/shader.glsl",
+            )
+        )
+        self.scene.apply_mesh_programs(self.program)
         self.camera.position = (
             self.scene.get_center()
             + glm.vec3(0.0, 0.0, self.scene.diagonal_size / 1.75)
         )
-        
+
     def on_render(self, time: float, frame_time: float):
-        self.ctx.enable_only(moderngl.DEPTH_TEST | moderngl.CULL_FACE)
+        self.ctx.enable(moderngl.DEPTH_TEST | moderngl.CULL_FACE)
 
         self.scene.draw(
             projection_matrix=self.camera.projection.matrix,
             camera_matrix=self.camera.matrix,
             time=time,
         )
-        
+
 glw.run_window_config(DootWindow)
