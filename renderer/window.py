@@ -10,7 +10,7 @@ class CameraWindow(glw.WindowConfig):
             self.wnd.keys,
             fov=70.0,
             aspect_ratio=self.wnd.aspect_ratio,
-            near=0.1,
+            near=0.01,
             far=1000.0,
         )
         self.camera.velocity = 10.0
