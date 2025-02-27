@@ -1,17 +1,18 @@
 from moderngl_window.resources import programs
 from moderngl_window.scene.programs import MeshProgram
-from renderer.window import RenderWindow
+from renderer.window import CollisionWindow
 import glm
 import moderngl_window as glw
 from moderngl_window.meta import ProgramDescription
 import moderngl
 
-class DootWindow(RenderWindow):
+class DootWindow(CollisionWindow):
     title = "DOOT"
     resource_dir = "assets"
     fullscreen = False
 
     def __init__(self, **kwargs):
         super().__init__("test/test.gltf", **kwargs)
-                
+        self.camera.set_position(0.0, 0.0, 100.0)
+        
 glw.run_window_config(DootWindow)

@@ -134,7 +134,7 @@ class RenderWindow(CameraWindow):
 class CollisionWindow(RenderWindow):
     def __init__(self, scene: str, **kwargs):
         super().__init__(scene, **kwargs)
-
+        
         collisionObjects = []
         for node in self.scene.nodes:
             collisionObjects += self.get_collision_objects(node, [])
@@ -142,28 +142,38 @@ class CollisionWindow(RenderWindow):
         self.collisionManager.registerObjects(collisionObjects)
         self.collisionManager.setup()
 
-        camColMesh = fcl.Capsule(1, 2)
-        camTransform = fcl.Transform(np.array([0, 0, 0]))
-
+        camColMesh = fcl.Capsule(0.1, 0.1)
+        camTransform = fcl.Transform(np.array(self.camera.position))
         self.cameraCollisionObject = fcl.CollisionObject(camColMesh, camTransform)
         
-        print(collisionObjects)
-
+        self.lastCamPos = self.camera.position
+        
     def on_render(self, time, frametime):
+        if self.detect_cam_collision():
+            self.camera.set_position(self.lastCamPos[0], self.lastCamPos[1], self.lastCamPos[2])
+
+        else:
+            self.lastCamPos = self.camera.position
         super().on_render(time, frametime)
 
-        # self.cameraCollisionObject.setTranslation(np.array([
-        #     self.camera.position[0],
-        #     self.camera.position[1],
-        #     self.camera.position[2],
-        # ]))
-        
+        # # Draw bounding boxes
+        # self.scene.draw_bbox(
+        #     projection_matrix=self.camera.projection.matrix,
+        #     camera_matrix=self.camera.matrix,
+        #     children=True,
+        #     color=(0.75, 0.75, 0.75),
+        # )
         print(self.detect_cam_collision())
+        self.cameraCollisionObject.setTranslation(np.array(self.camera.position))
 
     def get_collision_objects(self, node: glw.scene.Node, collisionObjects):
         if node.mesh:
-            m = fcl.BVHModel(np.array(node.mesh.vao.vaos))
-            t = fcl.Transform(np.array(glm.mat3(node.matrix)), np.array(glm.vec3(node.matrix[3])))
+            m = fcl.Box(
+                (node.mesh.bbox_max[0] - node.mesh.bbox_min[0]) * 0.5,
+                (node.mesh.bbox_max[1] - node.mesh.bbox_min[1]) * 0.5,
+                (node.mesh.bbox_max[2] - node.mesh.bbox_min[2]) * 0.5,
+            )
+            t = fcl.Transform(np.array(glm.mat3(node.matrix_global)), np.array(glm.vec3(node.matrix_global[3])))
             collisionObjects.append(fcl.CollisionObject(m, t))
         for child in node.children:
             collisionObjects += self.get_collision_objects(child, [])
