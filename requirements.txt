@@ -2,3 +2,4 @@ moderngl
 moderngl-window
 glfw
 pyglm
+python-fcl

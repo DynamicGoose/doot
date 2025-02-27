@@ -4,6 +4,8 @@ from moderngl_window.scene.camera import KeyboardCamera
 from moderngl_window import geometry
 import moderngl
 import math
+import fcl
+import numpy as np
 
 class CameraWindow(glw.WindowConfig):
     def __init__(self, **kwargs):
@@ -53,7 +55,7 @@ class RenderWindow(CameraWindow):
         super().__init__(**kwargs)
 
         # Offscreen buffer
-        offscreen_size = 4096, 4096
+        offscreen_size = 16000, 16000
         self.offscreen_depth = self.ctx.depth_texture(offscreen_size)
         self.offscreen_depth.compare_func = ""
         self.offscreen_depth.repeat_x = False
@@ -128,3 +130,50 @@ class RenderWindow(CameraWindow):
             node.mesh.vao.render(self.shadowmap_program)
         for child in node.children:
             self.draw_nodes_depth(child)
+
+class CollisionWindow(RenderWindow):
+    def __init__(self, scene: str, **kwargs):
+        super().__init__(scene, **kwargs)
+
+        collisionObjects = []
+        for node in self.scene.nodes:
+            collisionObjects += self.get_collision_objects(node, [])
+        self.collisionManager = fcl.DynamicAABBTreeCollisionManager()
+        self.collisionManager.registerObjects(collisionObjects)
+        self.collisionManager.setup()
+
+        camColMesh = fcl.Capsule(1, 2)
+        camTransform = fcl.Transform(np.array([0, 0, 0]))
+
+        self.cameraCollisionObject = fcl.CollisionObject(camColMesh, camTransform)
+        
+        print(collisionObjects)
+
+    def on_render(self, time, frametime):
+        super().on_render(time, frametime)
+
+        # self.cameraCollisionObject.setTranslation(np.array([
+        #     self.camera.position[0],
+        #     self.camera.position[1],
+        #     self.camera.position[2],
+        # ]))
+        
+        print(self.detect_cam_collision())
+
+    def get_collision_objects(self, node: glw.scene.Node, collisionObjects):
+        if node.mesh:
+            m = fcl.BVHModel(np.array(node.mesh.vao.vaos))
+            t = fcl.Transform(np.array(glm.mat3(node.matrix)), np.array(glm.vec3(node.matrix[3])))
+            collisionObjects.append(fcl.CollisionObject(m, t))
+        for child in node.children:
+            collisionObjects += self.get_collision_objects(child, [])
+
+        return collisionObjects
+
+    def detect_cam_collision(self):
+        req = fcl.CollisionRequest(num_max_contacts=100, enable_contact=True)
+        rdata = fcl.CollisionData(request=req)
+
+        self.collisionManager.collide(self.cameraCollisionObject, rdata, fcl.defaultCollisionCallback)
+
+        return rdata.result.is_collision
