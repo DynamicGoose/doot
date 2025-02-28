@@ -13,6 +13,6 @@ class DootWindow(CollisionWindow):
 
     def __init__(self, **kwargs):
         super().__init__("test/test.gltf", **kwargs)
-        self.camera.set_position(0.0, 0.0, 100.0)
+        self.camera.set_position(0.0, 0.0, 5.0)
         
 glw.run_window_config(DootWindow)

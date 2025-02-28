@@ -1,6 +1,6 @@
 import glm
 import moderngl_window as glw
-from moderngl_window.scene.camera import KeyboardCamera
+from renderer.camera import CollisionCamera
 from moderngl_window import geometry
 import moderngl
 import math
@@ -10,7 +10,7 @@ import numpy as np
 class CameraWindow(glw.WindowConfig):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.camera = KeyboardCamera(
+        self.camera = CollisionCamera(
             self.wnd.keys,
             fov=70.0,
             aspect_ratio=self.wnd.aspect_ratio,
@@ -55,7 +55,7 @@ class RenderWindow(CameraWindow):
         super().__init__(**kwargs)
 
         # Offscreen buffer
-        offscreen_size = 16000, 16000
+        offscreen_size = 8192, 8192
         self.offscreen_depth = self.ctx.depth_texture(offscreen_size)
         self.offscreen_depth.compare_func = ""
         self.offscreen_depth.repeat_x = False
@@ -149,22 +149,21 @@ class CollisionWindow(RenderWindow):
         self.lastCamPos = self.camera.position
         
     def on_render(self, time, frametime):
-        if self.detect_cam_collision():
-            self.camera.set_position(self.lastCamPos[0], self.lastCamPos[1], self.lastCamPos[2])
-
+        self.cameraCollisionObject.setTranslation(np.array(self.camera.get_update_pos()))
+        if not self.detect_cam_collision():
+            self.camera.update_pos()
         else:
-            self.lastCamPos = self.camera.position
+            self.camera._last_time = self.camera._check_last_time
         super().on_render(time, frametime)
 
         # # Draw bounding boxes
-        # self.scene.draw_bbox(
-        #     projection_matrix=self.camera.projection.matrix,
-        #     camera_matrix=self.camera.matrix,
-        #     children=True,
-        #     color=(0.75, 0.75, 0.75),
-        # )
-        print(self.detect_cam_collision())
-        self.cameraCollisionObject.setTranslation(np.array(self.camera.position))
+        self.scene.draw_bbox(
+            projection_matrix=self.camera.projection.matrix,
+            camera_matrix=self.camera.matrix,
+            children=True,
+            color=(0.75, 0.75, 0.75),
+        )
+        # print(self.detect_cam_collision())
 
     def get_collision_objects(self, node: glw.scene.Node, collisionObjects):
         if node.mesh:
@@ -180,10 +179,19 @@ class CollisionWindow(RenderWindow):
 
         return collisionObjects
 
+    def detect_cam_distance(self):
+        req = fcl.DistanceRequest(enable_nearest_points=False, enable_signed_distance=True)
+        rdata = fcl.DistanceData(request=req)
+
+        self.collisionManager.distance(self.cameraCollisionObject, rdata, fcl.defaultDistanceCallback)
+
+        return rdata.result
+
     def detect_cam_collision(self):
-        req = fcl.CollisionRequest(num_max_contacts=100, enable_contact=True)
+        req = fcl.CollisionRequest()
         rdata = fcl.CollisionData(request=req)
 
         self.collisionManager.collide(self.cameraCollisionObject, rdata, fcl.defaultCollisionCallback)
 
         return rdata.result.is_collision
+        
