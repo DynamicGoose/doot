@@ -55,7 +55,7 @@ class RenderWindow(CameraWindow):
         super().__init__(**kwargs)
 
         # Offscreen buffer
-        offscreen_size = 8192, 8192
+        offscreen_size = 16384, 16384
         self.offscreen_depth = self.ctx.depth_texture(offscreen_size)
         self.offscreen_depth.compare_func = ""
         self.offscreen_depth.repeat_x = False
@@ -146,23 +146,27 @@ class CollisionWindow(RenderWindow):
         camTransform = fcl.Transform(np.array(self.camera.position))
         self.cameraCollisionObject = fcl.CollisionObject(camColMesh, camTransform)
         
-        self.lastCamPos = self.camera.position
+        self.colliding = False
         
     def on_render(self, time, frametime):
-        self.cameraCollisionObject.setTranslation(np.array(self.camera.get_update_pos()))
-        if not self.detect_cam_collision():
-            self.camera.update_pos()
-        else:
+        next_pos = self.camera.get_update_pos()
+        self.cameraCollisionObject.setTranslation(np.array(next_pos))
+        
+        if self.detect_cam_collision():
             self.camera._last_time = self.camera._check_last_time
+            self.camera.position += (self.camera.position - glm.vec3(self.detect_cam_distance().nearest_points[1])) * 0.1
+        else:
+            self.camera.update_pos()
+            
         super().on_render(time, frametime)
 
         # # Draw bounding boxes
-        self.scene.draw_bbox(
-            projection_matrix=self.camera.projection.matrix,
-            camera_matrix=self.camera.matrix,
-            children=True,
-            color=(0.75, 0.75, 0.75),
-        )
+        # self.scene.draw_bbox(
+        #     projection_matrix=self.camera.projection.matrix,
+        #     camera_matrix=self.camera.matrix,
+        #     children=True,
+        #     color=(0.75, 0.75, 0.75),
+        # )
         # print(self.detect_cam_collision())
 
     def get_collision_objects(self, node: glw.scene.Node, collisionObjects):
