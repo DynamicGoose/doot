@@ -51,11 +51,11 @@ class CameraWindow(glw.WindowConfig):
 class RenderWindow(CameraWindow):
     resource_dir = "assets"
 
-    def __init__(self, scene: str(), **kwargs):
+    def __init__(self, scene: str, dynamic: [str], **kwargs):
         super().__init__(**kwargs)
 
         # Offscreen buffer
-        offscreen_size = 16384, 16384
+        offscreen_size = 4096, 4096
         self.offscreen_depth = self.ctx.depth_texture(offscreen_size)
         self.offscreen_depth.compare_func = ""
         self.offscreen_depth.repeat_x = False
@@ -68,7 +68,10 @@ class RenderWindow(CameraWindow):
         )
 
         self.scene = self.load_scene(scene)
-        
+        self.dynamic = []
+        for entity in dynamic:
+            self.dynamic.append(self.load_scene(entity))
+
         # Scene geometry
         self.sun = geometry.sphere(radius=1.0)
 
@@ -85,7 +88,7 @@ class RenderWindow(CameraWindow):
         self.lightpos = glm.vec3(math.sin(time * 0.1) * 10, 20, math.cos(time * 0.1) * 10)
         # self.lightpos = glm.vec3(10, 20, 10)
 
-        # --- PASS 1: Render shadow map
+        # pass 1: render shadow map
         self.offscreen.clear()
         self.offscreen.use()
 
@@ -97,7 +100,11 @@ class RenderWindow(CameraWindow):
         for node in self.scene.nodes:
             self.draw_nodes_depth(node)
 
-        # --- PASS 2: Render scene to screen
+        for entity in self.dynamic:
+            for node in entity.nodes:
+                self.draw_nodes_depth(node)
+
+        # pass 2: render scene
         self.wnd.use()
         self.basic_light["m_proj"].write(self.camera.projection.matrix)
         self.basic_light["m_camera"].write(self.camera.matrix)
@@ -108,6 +115,10 @@ class RenderWindow(CameraWindow):
 
         for node in self.scene.nodes:
             self.draw_nodes_light(node)
+
+        for entity in self.dynamic:
+            for node in entity.nodes:
+                self.draw_nodes_light(node)
                         
         # Render the sun position
         self.sun_prog["m_proj"].write(self.camera.projection.matrix)
@@ -132,8 +143,8 @@ class RenderWindow(CameraWindow):
             self.draw_nodes_depth(child)
 
 class CollisionWindow(RenderWindow):
-    def __init__(self, scene: str, **kwargs):
-        super().__init__(scene, **kwargs)
+    def __init__(self, scene: str, dynamic: str, **kwargs):
+        super().__init__(scene, dynamic, **kwargs)
         
         collisionObjects = []
         for node in self.scene.nodes:
@@ -142,6 +153,15 @@ class CollisionWindow(RenderWindow):
         self.collisionManager.registerObjects(collisionObjects)
         self.collisionManager.setup()
 
+        # entityCollisionObjects = []
+        # for entity in self.dynamic:
+        #     for node in entity.nodes:
+        #         entityCollisionObjects += self.get_collision_objects(node, [])
+        # self.entityCollisionManager = fcl.DynamicAABBTreeCollisionManager()
+        # self.entityCollisionManager.registerObjects(entityCollisionObjects)
+        # self.entityCollisionManager.setup()
+        # print(self.entityCollisionManager.getObjects())
+
         camColMesh = fcl.Capsule(0.1, 0.1)
         camTransform = fcl.Transform(np.array(self.camera.position))
         self.cameraCollisionObject = fcl.CollisionObject(camColMesh, camTransform)
@@ -149,12 +169,24 @@ class CollisionWindow(RenderWindow):
         self.colliding = False
         
     def on_render(self, time, frametime):
+        # entityCollisionObjects = []
+        # for entity in self.dynamic:
+        #     for node in entity.nodes:
+        #         entityCollisionObjects += self.get_collision_objects(node, [])
+        # self.entityCollisionManager.clear()
+        # self.entityCollisionManager.registerObjects(entityCollisionObjects)
+        # self.entityCollisionManager.setup()
+            
+        
         next_pos = self.camera.get_update_pos()
         self.cameraCollisionObject.setTranslation(np.array(next_pos))
         
         if self.detect_cam_collision():
             self.camera._last_time = self.camera._check_last_time
             self.camera.position += (self.camera.position - glm.vec3(self.detect_cam_distance().nearest_points[1])) * 0.1
+        # elif self.detect_cam_entity_collision():
+        #     self.camera._last_time = self.camera._check_last_time
+        #     self.camera.position += (self.camera.position - glm.vec3(self.detect_cam_entity_distance().nearest_points[1])) * 0.1
         else:
             self.camera.update_pos()
             
@@ -167,7 +199,14 @@ class CollisionWindow(RenderWindow):
         #     children=True,
         #     color=(0.75, 0.75, 0.75),
         # )
-        # print(self.detect_cam_collision())
+
+        # for entity in self.dynamic:
+        #     entity.draw_bbox(
+        #         projection_matrix=self.camera.projection.matrix,
+        #         camera_matrix=self.camera.matrix,
+        #         children=True,
+        #         color=(0.75, 0.75, 0.75),
+        #     )
 
     def get_collision_objects(self, node: glw.scene.Node, collisionObjects):
         if node.mesh:
@@ -199,3 +238,18 @@ class CollisionWindow(RenderWindow):
 
         return rdata.result.is_collision
         
+    def detect_cam_entity_distance(self):
+        req = fcl.DistanceRequest(enable_nearest_points=False, enable_signed_distance=True)
+        rdata = fcl.DistanceData(request=req)
+
+        self.entityCollisionManager.distance(self.cameraCollisionObject, rdata, fcl.defaultDistanceCallback)
+
+        return rdata.result
+
+    def detect_cam_entity_collision(self):
+        req = fcl.CollisionRequest()
+        rdata = fcl.CollisionData(request=req)
+
+        self.entityCollisionManager.collide(self.cameraCollisionObject, rdata, fcl.defaultCollisionCallback)
+
+        return rdata.result.is_collision
