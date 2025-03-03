@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from moderngl_window.resources import programs
 from moderngl_window.scene.programs import MeshProgram
 from renderer.window import CollisionWindow, RenderWindow
@@ -5,6 +6,9 @@ import glm
 import moderngl_window as glw
 from moderngl_window.meta import ProgramDescription
 import moderngl
+=======
+
+>>>>>>> ferdi
 
 class DootWindow(CollisionWindow):
     title = "DOOT"
@@ -17,9 +21,16 @@ class DootWindow(CollisionWindow):
         self.camera.set_position(0.0, 0.0, 5.0)
         self.camera.velocity = 1.0
 
+<<<<<<< HEAD
     def on_render(self, time, frametime):
         for node in self.dynamic[0].nodes:
             node._matrix_global = node._matrix_global * glm.translate(glm.vec3(0, 0, 0.001))
         super().on_render(time, frametime)
                         
 glw.run_window_config(DootWindow)
+=======
+class FluteGuy(Enemy):
+    def __init__(self, name):
+        self.name = name
+
+>>>>>>> ferdi
