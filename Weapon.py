@@ -1,3 +1,5 @@
+from Hurt import Projectile
+
 up = "e"
 down = "q"
 class Weapon:
@@ -17,8 +19,10 @@ class Weapon:
 
 class Revolver(Weapon):
     def __init__(self):
+        super().__init__()
         self.model = model
         self.texture = texture
-    def  shooting(self):
+    def  shooting(self, pos, v):
         #shootingfunction
+        projectile = Projectile(pos, v)
         print("shot")

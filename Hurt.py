@@ -1,7 +1,7 @@
 class Hurt:
-    def __init__(self, pos):
+    def __init__(self, pos, v):
         self.pos = pos
-        self.v = [0.0, 0.0, 0.0]
+        self.v = v
     def movement(self):
         self.pos += self.v
 class Projectile(Hurt):
