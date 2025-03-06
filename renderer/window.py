@@ -20,6 +20,7 @@ class CameraWindow(glw.WindowConfig):
         self.camera.velocity = 10.0
         self.camera.mouse_sensitivity = 0.25
         self.camera_enabled = True
+        self.jump_vel = 0.0
 
     def on_key_event(self, key, action, modifiers):
         keys = self.wnd.keys
@@ -34,8 +35,12 @@ class CameraWindow(glw.WindowConfig):
                 self.camera_enabled = not self.camera_enabled
                 self.wnd.mouse_exclusivity = self.camera_enabled
                 self.wnd.cursor = not self.camera_enabled
+            # if key == keys.SPACE:
+            #     self.timer.toggle_pause()
+
+        if self.jump_vel == 0.0:
             if key == keys.SPACE:
-                self.timer.toggle_pause()
+                self.jump_vel = 10.0
 
     def on_mouse_position_event(self, x: int, y: int, dx, dy):
         if self.camera_enabled:
@@ -162,8 +167,8 @@ class CollisionWindow(RenderWindow):
         # self.entityCollisionManager.setup()
         # print(self.entityCollisionManager.getObjects())
 
-        camColMesh = fcl.Capsule(0.1, 0.1)
-        camTransform = fcl.Transform(np.array(self.camera.position))
+        camColMesh = fcl.Capsule(0.1, 1.0)
+        camTransform = fcl.Transform(np.array(self.camera.position - glm.vec3(0.0, 0.5, 0.0)))
         self.cameraCollisionObject = fcl.CollisionObject(camColMesh, camTransform)
         
         self.colliding = False
@@ -177,9 +182,17 @@ class CollisionWindow(RenderWindow):
         # self.entityCollisionManager.registerObjects(entityCollisionObjects)
         # self.entityCollisionManager.setup()
             
-        
-        next_pos = self.camera.get_update_pos()
-        self.cameraCollisionObject.setTranslation(np.array(next_pos))
+        self.camera.position.y += self.jump_vel * frametime
+        if self.detect_cam_collision():
+            self.jump_vel = 0.0
+        elif self.camera.position[1] > 0.01 and not self.detect_cam_collision():
+            self.jump_vel -= 0.2
+        else:
+            self.camera.position[1] = 0.00
+            self.jump_vel = 0.0
+
+        next_pos = self.camera.get_update_pos(self.jump_vel)
+        self.cameraCollisionObject.setTranslation(np.array(next_pos - glm.vec3(0.0, 0.5, 0.0)))
         
         if self.detect_cam_collision():
             self.camera._last_time = self.camera._check_last_time

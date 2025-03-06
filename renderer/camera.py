@@ -37,14 +37,15 @@ class CollisionCamera(KeyboardCamera):
             self.position += self.dir * self._velocity * t
         elif self._zdir == 1:
             self.position -= self.dir * self._velocity * t
+        
+        # pos = self.position + self.jump_vel * t
+        # # Y Movement
+        # if self._ydir == 1:
+        #     self.position += self.up * self._velocity * t
+        # elif self._ydir == 2:
+        #     self.position -= self.up * self._velocity * t
 
-        # Y Movement
-        if self._ydir == 1:
-            self.position += self.up * self._velocity * t
-        elif self._ydir == 2:
-            self.position -= self.up * self._velocity * t
-
-    def get_update_pos(self):
+    def get_update_pos(self, jump_vel):
         # Use separate time in camera so we can move it when the demo is paused
         now = time.time()
         # If the camera has been inactive for a while, a large time delta
@@ -66,11 +67,13 @@ class CollisionCamera(KeyboardCamera):
         elif self._zdir == 1:
             pos = self.position - self.dir * self._velocity * t
 
+        pos = self.position + jump_vel * t
+
         # Y Movement
-        if self._ydir == 1:
-            pos = self.position + self.up * self._velocity * t
-        elif self._ydir == 2:
-            pos = self.position - self.up * self._velocity * t
+        # if self._ydir == 1:
+        #     pos = self.position + self.up * self._velocity * t
+        # elif self._ydir == 2:
+        #     pos = self.position - self.up * self._velocity * t
 
         return pos
         

@@ -13,7 +13,7 @@ class Player:
             self.v[0, 1] += self.d[0, 1] * self.a
     def vertical_movement(self):
         self.v[2] += g
-        #if spacebar pressed and on the floor:
+        if  and on the floor:
         #   self.v[2] = jumping_strength
         #if self.pos + self.v[2] through floor:
         #   self.pos[2] on floor
