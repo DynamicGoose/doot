@@ -1,4 +1,4 @@
-from Hurt import Projectile
+from Projectile import *
 
 up = "e"
 down = "q"

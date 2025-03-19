@@ -40,7 +40,7 @@ class CameraWindow(glw.WindowConfig):
 
         if self.jump_vel == 0.0:
             if key == keys.SPACE:
-                self.jump_vel = 10.0
+                self.jump_vel = 12.0
 
     def on_mouse_position_event(self, x: int, y: int, dx, dy):
         if self.camera_enabled:
@@ -56,7 +56,7 @@ class CameraWindow(glw.WindowConfig):
 class RenderWindow(CameraWindow):
     resource_dir = "assets"
 
-    def __init__(self, scene: str, dynamic: [str], **kwargs):
+    def __init__(self, scene: str, dynamic: str, **kwargs):
         super().__init__(**kwargs)
 
         # Offscreen buffer
@@ -74,8 +74,18 @@ class RenderWindow(CameraWindow):
 
         self.scene = self.load_scene(scene)
         self.dynamic = []
-        for entity in dynamic:
-            self.dynamic.append(self.load_scene(entity))
+        self.dynamic_enemy = []
+        self.dynamic_bullet_enemy = []
+        self.dynamic_bullet_player = []
+        for enemy in dynamic[0]:
+            self.dynamic_enemy.append(self.load_scene(enemy))
+        self.dynamic.append(self.dynamic_enemy)
+        for bullet in dynamic[1]:
+            self.dynamic_bullet_enemy.append(self.load_scene(bullet))
+        self.dynamic.append(self.dynamic_bullet_enemy)
+        for bullet in dynamic[2]:
+            self.dynamic_bullet_player.append(self.load_scene(bullet))
+        self.dynamic.append(self.dynamic_bullet_player)
 
         # Scene geometry
         self.sun = geometry.sphere(radius=1.0)
@@ -105,9 +115,10 @@ class RenderWindow(CameraWindow):
         for node in self.scene.nodes:
             self.draw_nodes_depth(node)
 
-        for entity in self.dynamic:
-            for node in entity.nodes:
-                self.draw_nodes_depth(node)
+        for array in self.dynamic:
+            for entity in array:
+                for node in entity.nodes:
+                    self.draw_nodes_depth(node)
 
         # pass 2: render scene
         self.wnd.use()
@@ -121,9 +132,10 @@ class RenderWindow(CameraWindow):
         for node in self.scene.nodes:
             self.draw_nodes_light(node)
 
-        for entity in self.dynamic:
-            for node in entity.nodes:
-                self.draw_nodes_light(node)
+        for array in self.dynamic:
+            for entity in array:
+                for node in entity.nodes:
+                    self.draw_nodes_light(node)
                         
         # Render the sun position
         self.sun_prog["m_proj"].write(self.camera.projection.matrix)
@@ -186,12 +198,13 @@ class CollisionWindow(RenderWindow):
         if self.detect_cam_collision():
             self.jump_vel = 0.0
         elif self.camera.position[1] > 0.01 and not self.detect_cam_collision():
-            self.jump_vel -= 0.2
+            self.jump_vel -= 0.15
         else:
             self.camera.position[1] = 0.00
             self.jump_vel = 0.0
 
         next_pos = self.camera.get_update_pos(self.jump_vel)
+    
         self.cameraCollisionObject.setTranslation(np.array(next_pos - glm.vec3(0.0, 0.5, 0.0)))
         
         if self.detect_cam_collision():

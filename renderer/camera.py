@@ -3,6 +3,7 @@ from moderngl_window.utils.keymaps import QWERTY, KeyMapFactory
 from moderngl_window.context.base import BaseKeys
 import time
 import glm
+import copy
 
 class CollisionCamera(KeyboardCamera):
     def __init__(
@@ -15,6 +16,7 @@ class CollisionCamera(KeyboardCamera):
         far: float = 100.0,
     ):
         super().__init__(keys, keymap, fov, aspect_ratio, near, far)
+        self.r = 1
 
         self._check_last_time = time.time()
     
@@ -27,16 +29,22 @@ class CollisionCamera(KeyboardCamera):
         self._last_time = now
 
         # X Movement
+        self.r = copy.copy(self.right)
+        self.r[1] = 0
+        self.r = glm.normalize(self.r)
         if self._xdir == 1:
-            self.position += self.right * self._velocity * t
+            self.position += self.r * self._velocity * t
         elif self._xdir == 2:
-            self.position -= self.right * self._velocity * t
+            self.position -=  self.r * self._velocity * t
 
         # Z Movement
+        self.d = copy.copy(self.dir)
+        self.d[1] = 0
+        self.d = glm.normalize(self.d)
         if self._zdir == 2:
-            self.position += self.dir * self._velocity * t
+            self.position += self.d * self._velocity * t
         elif self._zdir == 1:
-            self.position -= self.dir * self._velocity * t
+            self.position -= self.d * self._velocity * t
         
         # pos = self.position + self.jump_vel * t
         # # Y Movement
@@ -60,8 +68,9 @@ class CollisionCamera(KeyboardCamera):
             pos = self.position + self.right * self._velocity * t
         elif self._xdir == 2:
             pos = self.position - self.right * self._velocity * t
-
+        
         # Z Movement
+        self.d = 1
         if self._zdir == 2:
             pos = self.position + self.dir * self._velocity * t
         elif self._zdir == 1:
