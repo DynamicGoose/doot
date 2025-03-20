@@ -40,7 +40,7 @@ class CameraWindow(glw.WindowConfig):
 
         if self.jump_vel == 0.0:
             if key == keys.SPACE:
-                self.jump_vel = 12.0
+                self.jump_vel = 7.0
 
     def on_mouse_position_event(self, x: int, y: int, dx, dy):
         if self.camera_enabled:
@@ -198,7 +198,7 @@ class CollisionWindow(RenderWindow):
         if self.detect_cam_collision():
             self.jump_vel = 0.0
         elif self.camera.position[1] > 0.01 and not self.detect_cam_collision():
-            self.jump_vel -= 0.15
+            self.jump_vel -= 15 * frametime
         else:
             self.camera.position[1] = 0.00
             self.jump_vel = 0.0

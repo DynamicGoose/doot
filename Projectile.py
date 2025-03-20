@@ -8,8 +8,9 @@ class RevolverBullet:
         self.model_id = model_id
         self.targetpos = targetpos
         self.v = glm.normalize(self.targetpos - self.pos) * self.speed
-    def hitevent(self):
-        print("hiteventrevolverbullet")
+    def hitevent(self, target):
+        target.hp -= 1
+
 
     def rb_movement(self):
         self.pos += self.v
