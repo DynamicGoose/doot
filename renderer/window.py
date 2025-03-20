@@ -30,11 +30,11 @@ class CameraWindow(glw.WindowConfig):
             self.wnd.mouse_exclusivity = True
             self.wnd.cursor = False
             
-        if action == keys.ACTION_PRESS:
-            if key == keys.C:
-                self.camera_enabled = not self.camera_enabled
-                self.wnd.mouse_exclusivity = self.camera_enabled
-                self.wnd.cursor = not self.camera_enabled
+        # if action == keys.ACTION_PRESS:
+        #     if key == keys.C:
+        #         self.camera_enabled = not self.camera_enabled
+        #         self.wnd.mouse_exclusivity = self.camera_enabled
+        #         self.wnd.cursor = not self.camera_enabled
             # if key == keys.SPACE:
             #     self.timer.toggle_pause()
 
@@ -49,9 +49,9 @@ class CameraWindow(glw.WindowConfig):
     def on_resize(self, width: int, height: int):
         self.camera.projection.update(aspect_ratio=self.wnd.aspect_ratio)
 
-    def on_mouse_scroll_event(self, x_offset: float, y_offset: float) -> None:
-        velocity = self.camera.velocity + y_offset
-        self.camera.velocity = max(velocity, 1.0)
+    # def on_mouse_scroll_event(self, x_offset: float, y_offset: float) -> None:
+    #     velocity = self.camera.velocity + y_offset
+    #     self.camera.velocity = max(velocity, 1.0)
 
 class RenderWindow(CameraWindow):
     resource_dir = "assets"
@@ -170,6 +170,10 @@ class CollisionWindow(RenderWindow):
         self.collisionManager.registerObjects(collisionObjects)
         self.collisionManager.setup()
 
+        self.entityCollisions = []
+        self.enemyProjectiles = fcl.DynamicAABBTreeCollisionManager()
+        self.playerProjectiles = fcl.DynamicAABBTreeCollisionManager()
+
         # entityCollisionObjects = []
         # for entity in self.dynamic:
         #     for node in entity.nodes:
@@ -186,14 +190,33 @@ class CollisionWindow(RenderWindow):
         self.colliding = False
         
     def on_render(self, time, frametime):
-        # entityCollisionObjects = []
-        # for entity in self.dynamic:
-        #     for node in entity.nodes:
-        #         entityCollisionObjects += self.get_collision_objects(node, [])
-        # self.entityCollisionManager.clear()
-        # self.entityCollisionManager.registerObjects(entityCollisionObjects)
-        # self.entityCollisionManager.setup()
-            
+
+        # entity hitboxes
+        entityCollisionObjects = []
+        for entity in self.dynamic[0]:
+            for node in entity.nodes:
+                entityCollisionObjects += self.get_collision_objects(node, [])
+        self.entityCollisions = entityCollisionObjects
+
+        # enemy projectiles
+        enemyProjectiles = []
+        for entity in self.dynamic[1]:
+            for node in entity.nodes:
+                enemyProjectiles += self.get_collision_objects(node, [])
+        self.enemyProjectiles.clear()
+        self.enemyProjectiles.registerObjects(enemyProjectiles)
+        self.enemyProjectiles.setup()
+
+        # player projectiles
+        playerProjectiles = []
+        for entity in self.dynamic[2]:
+            for node in entity.nodes:
+                playerProjectiles += self.get_collision_objects(node, [])
+        self.playerProjectiles.clear()
+        self.playerProjectiles.registerObjects(enemyProjectiles)
+        self.playerProjectiles.setup()
+        
+        
         self.camera.position.y += self.jump_vel * frametime
         if self.detect_cam_collision():
             self.jump_vel = 0.0
@@ -264,18 +287,21 @@ class CollisionWindow(RenderWindow):
 
         return rdata.result.is_collision
         
-    def detect_cam_entity_distance(self):
-        req = fcl.DistanceRequest(enable_nearest_points=False, enable_signed_distance=True)
-        rdata = fcl.DistanceData(request=req)
-
-        self.entityCollisionManager.distance(self.cameraCollisionObject, rdata, fcl.defaultDistanceCallback)
-
-        return rdata.result
-
-    def detect_cam_entity_collision(self):
+    def detect_player_hit(self):
         req = fcl.CollisionRequest()
         rdata = fcl.CollisionData(request=req)
 
-        self.entityCollisionManager.collide(self.cameraCollisionObject, rdata, fcl.defaultCollisionCallback)
+        self.enemyProjectiles.collide(self.cameraCollisionObject, rdata, fcl.defaultCollisionCallback)
 
         return rdata.result.is_collision
+
+    def detect_enemy_hits(self):
+        collisions = []
+        for i, collisionObject in enumerate(self.entityCollisions):
+            req = fcl.CollisionRequest()
+            rdata = fcl.CollisionData(request=req)
+            self.playerProjectiles.collide(collisionObject, rdata, fcl.defaultCollisionCallback)
+            if rdata.result.is_collision:
+                collisions.append(i)
+
+        return collisions
