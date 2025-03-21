@@ -22,9 +22,10 @@ class Plop(Enemy):
             self.walkingt = random.randint(1, 2)
             self.idlew = random.randint(0, 3)
         if self.walkingt > 0:
-            self.v = glm.normalize(self.vv + glm.normalize(targetpos - self.pos) * 3) * 4
+            self.v = glm.normalize(self.vv + glm.normalize(targetpos - self.pos) * 3) * 3
             self.v[1] = 0
-            self.pos += self.v * frametime
+            if glm.distance(self.pos, targetpos) > 10:
+                self.pos += self.v * frametime
             self.walkingt -= 1 * frametime
         elif self.idlew > 0:
             self.idlew -= 1  * frametime

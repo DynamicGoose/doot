@@ -1,13 +1,13 @@
 import glm
+import copy
 class RevolverBullet:
-    def __init__(self, model_id, pos: glm.vec3, targetpos: glm.vec3, hostility):
-        self.speed = 10
+    def __init__(self, model_id, pos: glm.vec3, dir: glm.vec3, speed):
+        self.speed = speed
         self.pos = 0
         self.pos += pos
-        self.hostility = hostility
         self.model_id = model_id
-        self.targetpos = targetpos
-        self.v = glm.normalize(self.targetpos - self.pos) * self.speed
+        self.v = copy.copy(dir) * self.speed
+        self.pos += copy.copy(dir)
     def hitevent(self, target):
         target.hp -= 1
 

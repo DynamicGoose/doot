@@ -2,6 +2,7 @@ import glm
 import moderngl_window as glw
 from renderer.camera import CollisionCamera
 from moderngl_window import geometry
+from moderngl_window.context.base import BaseKeys
 import moderngl
 import math
 import fcl
@@ -21,6 +22,7 @@ class CameraWindow(glw.WindowConfig):
         self.camera.mouse_sensitivity = 0.25
         self.camera_enabled = True
         self.jump_vel = 0.0
+        self.jump = False
 
     def on_key_event(self, key, action, modifiers):
         keys = self.wnd.keys
@@ -38,9 +40,15 @@ class CameraWindow(glw.WindowConfig):
             # if key == keys.SPACE:
             #     self.timer.toggle_pause()
 
-        if self.jump_vel == 0.0:
-            if key == keys.SPACE:
-                self.jump_vel = 7.0
+
+        if key == keys.SPACE and action == keys.ACTION_PRESS:
+            self.jump = True
+
+        if key == keys.SPACE and action == keys.ACTION_RELEASE:
+            self.jump = False
+
+        if key == keys.R and action == keys.ACTION_PRESS:
+            self.spawn_enemy = True
 
     def on_mouse_position_event(self, x: int, y: int, dx, dy):
         if self.camera_enabled:
@@ -48,6 +56,10 @@ class CameraWindow(glw.WindowConfig):
 
     def on_resize(self, width: int, height: int):
         self.camera.projection.update(aspect_ratio=self.wnd.aspect_ratio)
+
+    def on_mouse_press_event(self, x, y, button):
+        if button == 1:
+            self.mouse_pressed = True
 
     # def on_mouse_scroll_event(self, x_offset: float, y_offset: float) -> None:
     #     velocity = self.camera.velocity + y_offset
@@ -77,15 +89,18 @@ class RenderWindow(CameraWindow):
         self.dynamic_enemy = []
         self.dynamic_bullet_enemy = []
         self.dynamic_bullet_player = []
+
         for enemy in dynamic[0]:
             self.dynamic_enemy.append(self.load_scene(enemy))
         self.dynamic.append(self.dynamic_enemy)
+
         for bullet in dynamic[1]:
-            self.dynamic_bullet_enemy.append(self.load_scene(bullet))
-        self.dynamic.append(self.dynamic_bullet_enemy)
-        for bullet in dynamic[2]:
             self.dynamic_bullet_player.append(self.load_scene(bullet))
         self.dynamic.append(self.dynamic_bullet_player)
+        
+        for bullet in dynamic[2]:
+            self.dynamic_bullet_enemy.append(self.load_scene(bullet))
+        self.dynamic.append(self.dynamic_bullet_enemy)
 
         # Scene geometry
         self.sun = geometry.sphere(radius=1.0)
@@ -198,25 +213,26 @@ class CollisionWindow(RenderWindow):
                 entityCollisionObjects += self.get_collision_objects(node, [])
         self.entityCollisions = entityCollisionObjects
 
+        # player projectiles
+        playerProjectiles = []
+        for entity in self.dynamic[1]:
+            for node in entity.nodes:
+                playerProjectiles += self.get_collision_objects(node, [])
+        self.playerProjectiles.clear()
+        self.playerProjectiles.registerObjects(playerProjectiles)
+        self.playerProjectiles.setup()
+
         # enemy projectiles
         enemyProjectiles = []
-        for entity in self.dynamic[1]:
+        for entity in self.dynamic[2]:
             for node in entity.nodes:
                 enemyProjectiles += self.get_collision_objects(node, [])
         self.enemyProjectiles.clear()
         self.enemyProjectiles.registerObjects(enemyProjectiles)
         self.enemyProjectiles.setup()
-
-        # player projectiles
-        playerProjectiles = []
-        for entity in self.dynamic[2]:
-            for node in entity.nodes:
-                playerProjectiles += self.get_collision_objects(node, [])
-        self.playerProjectiles.clear()
-        self.playerProjectiles.registerObjects(enemyProjectiles)
-        self.playerProjectiles.setup()
         
-        
+        if self.jump_vel == 0.0 and self.jump == True:
+            self.jump_vel = 7
         self.camera.position.y += self.jump_vel * frametime
         if self.detect_cam_collision():
             self.jump_vel = 0.0

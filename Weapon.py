@@ -20,9 +20,6 @@ class Weapon:
 class Revolver(Weapon):
     def __init__(self):
         super().__init__()
-        self.model = model
-        self.texture = texture
-    def  shooting(self, pos, v):
+    def  shooting(self, dir, pos, array):
         #shootingfunction
-        projectile = Projectile(pos, v)
-        print("shot")
+        array.append(RevolverBullet(len(array), pos, dir, 50))
