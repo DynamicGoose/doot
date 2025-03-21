@@ -231,12 +231,12 @@ class CollisionWindow(RenderWindow):
         self.enemyProjectiles.registerObjects(enemyProjectiles)
         self.enemyProjectiles.setup()
         
-        if self.jump_vel == 0.0 and self.jump == True:
+        if self.jump_vel == 0.0 and self.jump:
             self.jump_vel = 7
         self.camera.position.y += self.jump_vel * frametime
         if self.detect_cam_collision():
             self.jump_vel = 0.0
-        elif self.camera.position[1] > 0.01 and not self.detect_cam_collision():
+        elif self.camera.position[1] > 0.0 and not self.detect_cam_collision():
             self.jump_vel -= 15 * frametime
         else:
             self.camera.position[1] = 0.00

@@ -14,7 +14,7 @@ class Enemy:
 
 class Plop(Enemy):
     def __init__(self, model_id, pos: glm.vec3):
-        super().__init__(pos, 10, 0.1)
+        super().__init__(pos, 3, 0.1)
         self.model_id = model_id
     def action(self, frametime, targetpos):
         if self.idlew <= 0:

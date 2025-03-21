@@ -18,7 +18,7 @@ class DootWindow(CollisionWindow):
     vsync = False
     
     def __init__(self, **kwargs):        
-        super().__init__("test/test.gltf", [["BarramundiFish/BarramundiFish.gltf"], [], []], **kwargs)
+        super().__init__("arena/arena.gltf", [["Enemy/enemy.gltf"], [], []], **kwargs)
         self.camera.set_position(0.0, 0.0, 5.0)
         self.camera.velocity = 5.0
         self.jump_vel = 0.0
@@ -28,22 +28,29 @@ class DootWindow(CollisionWindow):
         self.weapon = Revolver()
         self.mouse_pressed = False
         self.spawn_enemy = False
-        self.player_hp = 10
+        self.player_hp = 50
+        self.enemy_time = 5
+        self.enemy_last_time = 0.0
 
 
     def on_render(self, time, frametime):
         #for node in self.dynamic[0].nodes:
         #    node._matrix_global = node._matrix_global * glm.translate(glm.vec3(0, 0, 0.001))
-        
-        if self.mouse_pressed == True:
+
+        if time - self.enemy_last_time >= self.enemy_time:
+            self.spawn_enemy = True
+            self.enemy_last_time = time
+
+        if self.mouse_pressed:
             self.weapon.shooting(self.camera.dir, self.camera.position, self.projectiles_player)
-            self.dynamic_bullet_player.append(self.load_scene("test/cube_entity.gltf"))
+            self.dynamic_bullet_player.append(self.load_scene("bullet_01/bullet_01.gltf"))
             self.mouse_pressed = False
 
 
 
-        if self.detect_player_hit() == True:
-            self.player_hp -= 2
+        if self.detect_player_hit():
+            print("hit")
+            self.player_hp -= 10
             for projectile in self.projectiles_enemy:
                 if glm.distance(self.camera.position, projectile.pos) < 1:
                     self.id = projectile.model_id
@@ -53,11 +60,12 @@ class DootWindow(CollisionWindow):
                     del self.dynamic_bullet_enemy[projectile.model_id]
                     del self.projectiles_enemy[projectile.model_id]
             if self.player_hp < 0:
-                subprocess.Popen('poweroff', shell=True)
+                print("game over!")
+                exit()
 
-        if self.spawn_enemy == True:
+        if self.spawn_enemy:
             self.enemies.append(Plop(len(self.dynamic_enemy), glm.vec3(randint(-50, 50), randint(0, 3), randint(-50, 50))))
-            self.dynamic_enemy.append(self.load_scene("BarramundiFish/BarramundiFish.gltf"))
+            self.dynamic_enemy.append(self.load_scene("Enemy/enemy.gltf"))
             self.spawn_enemy = False
 
         for enemy_id in self.detect_enemy_hits():
@@ -83,7 +91,7 @@ class DootWindow(CollisionWindow):
             enemy.action(frametime, self.camera.position)
             if enemy.idlea <= 0:
                 self.projectiles_enemy.append(RevolverBullet(len(self.dynamic_bullet_enemy), enemy.pos, glm.normalize(self.camera.position - enemy.pos), 20))
-                self.dynamic_bullet_enemy.append(self.load_scene("test/cube_entity.gltf"))
+                self.dynamic_bullet_enemy.append(self.load_scene("bullet_02/bullet_02.gltf"))
                 enemy.idlea = random.randint(2, 6)
             else:
                 enemy.idlea -= 1 * frametime
