@@ -2,12 +2,12 @@ import glm
 import moderngl_window as glw
 from renderer.camera import CollisionCamera
 from moderngl_window import geometry
-from moderngl_window.context.base import BaseKeys
 import moderngl
 import math
 import fcl
 import numpy as np
 
+# Fenster mit nur Kamerabewgung
 class CameraWindow(glw.WindowConfig):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -32,15 +32,6 @@ class CameraWindow(glw.WindowConfig):
             self.wnd.mouse_exclusivity = True
             self.wnd.cursor = False
             
-        # if action == keys.ACTION_PRESS:
-        #     if key == keys.C:
-        #         self.camera_enabled = not self.camera_enabled
-        #         self.wnd.mouse_exclusivity = self.camera_enabled
-        #         self.wnd.cursor = not self.camera_enabled
-            # if key == keys.SPACE:
-            #     self.timer.toggle_pause()
-
-
         if key == keys.SPACE and action == keys.ACTION_PRESS:
             self.jump = True
 
@@ -61,10 +52,7 @@ class CameraWindow(glw.WindowConfig):
         if button == 1:
             self.mouse_pressed = True
 
-    # def on_mouse_scroll_event(self, x_offset: float, y_offset: float) -> None:
-    #     velocity = self.camera.velocity + y_offset
-    #     self.camera.velocity = max(velocity, 1.0)
-
+# Custom Rendering
 class RenderWindow(CameraWindow):
     resource_dir = "assets"
 
@@ -77,7 +65,7 @@ class RenderWindow(CameraWindow):
         self.offscreen_depth.compare_func = ""
         self.offscreen_depth.repeat_x = False
         self.offscreen_depth.repeat_y = False
-        # Less ugly by default with linear. May need to be NEAREST for some techniques
+        # Schöner als NEAREST
         self.offscreen_depth.filter = moderngl.LINEAR, moderngl.LINEAR
 
         self.offscreen = self.ctx.framebuffer(
@@ -174,6 +162,7 @@ class RenderWindow(CameraWindow):
         for child in node.children:
             self.draw_nodes_depth(child)
 
+# Fenster mit Kollisionsdetektion
 class CollisionWindow(RenderWindow):
     def __init__(self, scene: str, dynamic: str, **kwargs):
         super().__init__(scene, dynamic, **kwargs)
@@ -188,15 +177,6 @@ class CollisionWindow(RenderWindow):
         self.entityCollisions = []
         self.enemyProjectiles = fcl.DynamicAABBTreeCollisionManager()
         self.playerProjectiles = fcl.DynamicAABBTreeCollisionManager()
-
-        # entityCollisionObjects = []
-        # for entity in self.dynamic:
-        #     for node in entity.nodes:
-        #         entityCollisionObjects += self.get_collision_objects(node, [])
-        # self.entityCollisionManager = fcl.DynamicAABBTreeCollisionManager()
-        # self.entityCollisionManager.registerObjects(entityCollisionObjects)
-        # self.entityCollisionManager.setup()
-        # print(self.entityCollisionManager.getObjects())
 
         camColMesh = fcl.Capsule(0.1, 1.0)
         camTransform = fcl.Transform(np.array(self.camera.position - glm.vec3(0.0, 0.5, 0.0)))
@@ -249,6 +229,7 @@ class CollisionWindow(RenderWindow):
         if self.detect_cam_collision():
             self.camera._last_time = self.camera._check_last_time
             self.camera.position += (self.camera.position - glm.vec3(self.detect_cam_distance().nearest_points[1])) * 0.1
+        # Entity collision resolving funktioniert noch nicht sehr gut, also lassen wir das :)
         # elif self.detect_cam_entity_collision():
         #     self.camera._last_time = self.camera._check_last_time
         #     self.camera.position += (self.camera.position - glm.vec3(self.detect_cam_entity_distance().nearest_points[1])) * 0.1
@@ -257,22 +238,7 @@ class CollisionWindow(RenderWindow):
             
         super().on_render(time, frametime)
 
-        # # Draw bounding boxes
-        # self.scene.draw_bbox(
-        #     projection_matrix=self.camera.projection.matrix,
-        #     camera_matrix=self.camera.matrix,
-        #     children=True,
-        #     color=(0.75, 0.75, 0.75),
-        # )
-
-        # for entity in self.dynamic:
-        #     entity.draw_bbox(
-        #         projection_matrix=self.camera.projection.matrix,
-        #         camera_matrix=self.camera.matrix,
-        #         children=True,
-        #         color=(0.75, 0.75, 0.75),
-        #     )
-
+    # CollisionObjects für eine Scene-Node rekursiv erstellen
     def get_collision_objects(self, node: glw.scene.Node, collisionObjects):
         if node.mesh:
             m = fcl.Box(
@@ -287,6 +253,7 @@ class CollisionWindow(RenderWindow):
 
         return collisionObjects
 
+    # Camera distance
     def detect_cam_distance(self):
         req = fcl.DistanceRequest(enable_nearest_points=False, enable_signed_distance=True)
         rdata = fcl.DistanceData(request=req)
@@ -295,6 +262,7 @@ class CollisionWindow(RenderWindow):
 
         return rdata.result
 
+    # Camera collisions
     def detect_cam_collision(self):
         req = fcl.CollisionRequest()
         rdata = fcl.CollisionData(request=req)
@@ -302,7 +270,8 @@ class CollisionWindow(RenderWindow):
         self.collisionManager.collide(self.cameraCollisionObject, rdata, fcl.defaultCollisionCallback)
 
         return rdata.result.is_collision
-        
+
+    # Player hit by enemy projectiles?
     def detect_player_hit(self):
         req = fcl.CollisionRequest()
         rdata = fcl.CollisionData(request=req)
@@ -311,6 +280,7 @@ class CollisionWindow(RenderWindow):
 
         return rdata.result.is_collision
 
+    # Enemy hit by player projectiles?
     def detect_enemy_hits(self):
         collisions = []
         for i, collisionObject in enumerate(self.entityCollisions):

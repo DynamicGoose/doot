@@ -1,4 +1,6 @@
-from Projectile import *
+from Projectile import RevolverBullet
+
+# Weapon Klassen
 
 up = "e"
 down = "q"
@@ -21,5 +23,5 @@ class Revolver(Weapon):
     def __init__(self):
         super().__init__()
     def  shooting(self, dir, pos, array):
-        #shootingfunction
+        # Schießt RevolverBullet
         array.append(RevolverBullet(len(array), pos, dir, 50))

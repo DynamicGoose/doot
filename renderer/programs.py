@@ -3,6 +3,8 @@ from moderngl_window.scene.programs import MeshProgram
 from moderngl_window.meta import ProgramDescription
 import glm
 
+# Shader-Programme definieren. draw Funktion setzt auch uniforms.
+
 class DirectionalLightProgram(MeshProgram):
     def __init__(self, lightDir: glm.vec3, **kwargs):
         super().__init__(program=programs.load(ProgramDescription(path="shaders/directional_light.glsl")))

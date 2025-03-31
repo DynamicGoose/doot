@@ -1,5 +1,8 @@
 import glm
 import copy
+
+# Projektil-Definitionen, selbsterklärend
+
 class RevolverBullet:
     def __init__(self, model_id, pos: glm.vec3, dir: glm.vec3, speed):
         self.speed = speed

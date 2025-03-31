@@ -1,6 +1,8 @@
 import random
 import glm
-from Projectile import *
+
+# Gegner Definitionen. Plop wird im Spiel genutzt.
+
 class Enemy:
     def __init__(self, pos, hp, speed):
         self.pos = pos
